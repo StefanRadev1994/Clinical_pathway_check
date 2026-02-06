@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Клинична Пътека — Валидатор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --primary: #1a56db;
+      --primary-dark: #1642a8;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #dde2e9;
+      --green: #16a34a;
+      --green-bg: #ecfdf5;
+      --green-border: #86efac;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --red-border: #fca5a5;
+      --amber-bg: #fffbeb;
+      --amber-border: #fcd34d;
+      --amber-text: #92400e;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 640px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1a56db 0%, #3730a3 100%);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 24px 28px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow);
+    }
+    .header-icon {
+      width: 46px; height: 46px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .header h1 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .header p { font-size: 12px; color: rgba(200,215,255,0.85); margin-top: 3px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Form ── */
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+    select, textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px; color: var(--text); background: #fff; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+    }
+    textarea {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; height: 200px; resize: vertical; line-height: 1.6;
+    }
+    textarea::placeholder { color: #a0aec0; }
+    .field + .field { margin-top: 18px; }
+
+    /* ── Button ── */
+    .btn-check {
+      width: 100%; margin-top: 22px; padding: 14px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: var(--primary); border: none; border-radius: 12px;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(26,86,219,0.25);
+    }
+    .btn-check:hover { background: var(--primary-dark); }
+    .btn-check:active { transform: scale(0.985); }
+    .btn-check:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Results ── */
+    .results { margin-top: 24px; }
+
+    .progress-header {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px;
+    }
+    .progress-bar { width: 100%; height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+    .progress-fill.green { background: var(--green); }
+    .progress-fill.yellow { background: #eab308; }
+    .progress-fill.red { background: var(--red); }
+
+    /* Banners */
+    .banner {
+      margin-top: 18px; border-radius: 16px; padding: 36px 20px;
+      text-align: center; border-width: 2px; border-style: solid;
+      animation: bannerIn 0.4s ease;
+    }
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .banner-success { background: var(--green-bg); border-color: var(--green-border); }
+    .banner-fail { background: var(--red-bg); border-color: var(--red-border); }
+    .banner-icon { font-size: 60px; margin-bottom: 8px; }
+    .banner h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .banner-success h2 { color: var(--green); }
+    .banner-fail h2 { color: var(--red); }
+    .banner .sub { margin-top: 6px; font-size: 14px; font-weight: 500; }
+    .banner-success .sub { color: #15803d; }
+    .banner-fail .sub { color: #b91c1c; }
+
+    .missing-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+      padding: 5px 12px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    }
+
+    .warning-box {
+      margin-top: 18px; background: var(--amber-bg); border: 1.5px solid var(--amber-border);
+      border-radius: 12px; padding: 14px 18px; text-align: center;
+      color: var(--amber-text); font-weight: 500; font-size: 14px;
+    }
+
+    .details-toggle {
+      margin-top: 16px; background: none; border: none;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px; font-weight: 600; color: var(--primary);
+      cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0;
+    }
+    .details-toggle:hover { color: var(--primary-dark); }
+
+    .details-grid {
+      margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px; max-height: 340px; overflow-y: auto;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .detail-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    }
+    .detail-item.found { background: var(--green-bg); color: #166534; }
+    .detail-item.missing { background: var(--red-bg); color: #991b1b; font-weight: 600; }
+    .detail-icon { flex-shrink: 0; }
+
+    @media (max-width: 500px) {
+      .details-grid { grid-template-columns: 1fr; }
+      .banner h2 { font-size: 22px; }
+      .banner-icon { font-size: 48px; }
+    }
+
+    .footer { text-align: center; font-size: 11px; color: #a0aec0; margin-top: 18px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-icon">🏥</div>
+    <div>
+      <h1>Клинична Пътека — Валидатор</h1>
+      <p>Проверка за наличие на задължителни изследвания</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label for="pathway">Клинична пътека:</label>
+      <select id="pathway">
+        <option value="">— Изберете клинична пътека —</option>
+        <option value="АП 13">АП 13 (очаквайте скоро)</option>
+        <option value="АП 14">АП 14 (очаквайте скоро)</option>
+        <option value="АП 15">АП 15 (очаквайте скоро)</option>
+        <option value="КП 78.1">КП 78.1 (очаквайте скоро)</option>
+        <option value="КП 79.1">КП 79.1 (очаквайте скоро)</option>
+        <option value="КП 80.1">КП 80.1 (очаквайте скоро)</option>
+        <option value="КП 81.1">КП 81.1</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="inputText">Текст за проверка:</label>
+      <textarea id="inputText" placeholder="Поставете текста с резултати от изследвания тук..."></textarea>
+    </div>
+
+    <button class="btn-check" id="checkBtn" disabled>🔍 Провери</button>
+
+    <div id="results" class="results"></div>
+  </div>
+
+  <p class="footer">Клинична Пътека Валидатор v1.0</p>
+</div>
+
+<script>
+// ── Pathway keyword definitions ──
+const PATHWAY_KEYWORDS = {
+  "КП 81.1": [
+    { label: "Левкоцити", search: "Левкоцити" },
+    { label: "Хемоглобин", search: "Хемоглобин" },
+    { label: "Еритроцити", search: "Еритроцити" },
+    { label: "Хематокрит", search: "Хематокрит" },
+    { label: "MCV", regex: /\bMCV\b/ },
+    { label: "MCH", regex: /\bMCH\b/ },
+    { label: "MCHC", regex: /\bMCHC\b/ },
+    { label: "Тромбоцити", search: "Тромбоцити" },
+    { label: "ASAT", regex: /\bASAT\b/ },
+    { label: "ALAT", regex: /\bALAT\b/ },
+    { label: "GGT", regex: /\bGGT\b/ },
+    { label: "Алкална фосфатаза", search: "Алкална фосфатаза" },
+    { label: "Холестерол", search: "Холестерол" },
+    { label: "VLDL", regex: /\bVLDL\b/ },
+    { label: "HDL", regex: /\bHDL\b/ },
+    { label: "LDL", regex: /\bLDL\b/ },
+    { label: "Триглицериди", search: "Триглицериди" },
+    { label: "Креатинин - серум", search: "Креатинин - серум" },
+    { label: "Урея", search: "Урея" },
+    { label: "cCa++", regex: /cCa/ },
+    { label: "Калций", search: "Калций" },
+    { label: "Неорганичен фосфат", search: "Неорганичен фосфат" },
+    { label: "Mg", regex: /\bMg\b/ },
+    { label: "Натрий", search: "Натрий" },
+    { label: "Калий", search: "Калий" },
+    { label: "Хлорид", search: "Хлорид" },
+    { label: "PTH", regex: /\bPTH\b/ },
+    { label: "25 OH Vitamin D TOTAL", search: "25 OH Vitamin D" },
+    { label: "Beta Cross Laps", search: "Beta Cross Laps" },
+    { label: "Креатининов клирънс", search: "Креатининов клирънс" },
+    { label: "Креатинин - урина", search: "Креатинин - урина" },
+    { label: "Калций 24ч- урина", search: "Калций 24ч" },
+    { label: "Фосфор 24ч- урина", search: "Фосфор 24ч" },
+    { label: "Диуреза (Д-мл)", regex: /Д-\d/ },
+    { label: "Остеометрия на две области", search: "Остеометрия" },
+    { label: "УЗД на шия", search: "УЗД на шия" },
+  ]
+};
+
+const CONFIGURED = ["КП 81.1"];
+
+// ── DOM ──
+const pathwayEl = document.getElementById("pathway");
+const inputEl   = document.getElementById("inputText");
+const checkBtn  = document.getElementById("checkBtn");
+const resultsEl = document.getElementById("results");
+
+function updateBtn() {
+  checkBtn.disabled = !pathwayEl.value || !inputEl.value.trim();
+}
+pathwayEl.addEventListener("change", function() { updateBtn(); resultsEl.innerHTML = ""; });
+inputEl.addEventListener("input", function() { updateBtn(); resultsEl.innerHTML = ""; });
+
+// ── Check logic ──
+function checkKeyword(text, kw) {
+  return kw.regex ? kw.regex.test(text) : text.includes(kw.search);
+}
+
+checkBtn.addEventListener("click", function() {
+  var pathway = pathwayEl.value;
+  var text = inputEl.value;
+
+  if (!CONFIGURED.includes(pathway)) {
+    resultsEl.innerHTML = '<div class="warning-box">⚠️ Тази клинична пътека все още не е конфигурирана.</div>';
+    return;
+  }
+
+  var keywords = PATHWAY_KEYWORDS[pathway];
+  var checked = keywords.map(function(kw) {
+    return { label: kw.label, found: checkKeyword(text, kw) };
+  });
+  var missing = checked.filter(function(r) { return !r.found; });
+  var found   = checked.filter(function(r) { return r.found; });
+  var total   = keywords.length;
+  var pct     = Math.round((found.length / total) * 100);
+  var barClass = pct === 100 ? "green" : pct > 60 ? "yellow" : "red";
+
+  var html = '<div class="progress-header">' +
+    '<span>Намерени: ' + found.length + ' / ' + total + '</span>' +
+    '<span>' + pct + '%</span></div>' +
+    '<div class="progress-bar"><div class="progress-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
+
+  if (missing.length === 0) {
+    html += '<div class="banner banner-success">' +
+      '<div class="banner-icon">✅</div>' +
+      '<h2>Mission complete!</h2>' +
+      '<p class="sub">Всички ' + total + ' задължителни изследвания са налични.</p></div>';
+  } else {
+    var missingText = missing.length === 1
+      ? '„' + missing[0].label + '" липсва!'
+      : missing.length + ' изследвания липсват!';
+    var tags = missing.map(function(m) {
+      return '<span class="tag">❌ ' + m.label + '</span>';
+    }).join("");
+    html += '<div class="banner banner-fail">' +
+      '<div class="banner-icon">⚡</div>' +
+      '<h2>Stop!</h2>' +
+      '<p class="sub">' + missingText + '</p>' +
+      '<div class="missing-tags">' + tags + '</div></div>';
+  }
+
+  var detailItems = checked.map(function(r) {
+    var cls = r.found ? "found" : "missing";
+    var icon = r.found ? "✅" : "❌";
+    return '<div class="detail-item ' + cls + '">' +
+      '<span class="detail-icon">' + icon + '</span>' +
+      '<span>' + r.label + '</span></div>';
+  }).join("");
+
+  var showGrid = missing.length > 0 ? "grid" : "none";
+  html += '<button class="details-toggle" onclick="toggleDetails()">' +
+    '<span id="detailArrow">' + (missing.length > 0 ? '▼' : '▶') + '</span> Детайлен преглед</button>' +
+    '<div class="details-grid" id="detailsGrid" style="display:' + showGrid + '">' +
+    detailItems + '</div>';
+
+  resultsEl.innerHTML = html;
+});
+
+function toggleDetails() {
+  var grid = document.getElementById("detailsGrid");
+  var arrow = document.getElementById("detailArrow");
+  if (grid.style.display === "none") {
+    grid.style.display = "grid";
+    arrow.textContent = "▼";
+  } else {
+    grid.style.display = "none";
+    arrow.textContent = "▶";
+  }
+}
+</script>
+
+</body>
+</html>
