@@ -1073,16 +1073,17 @@ function arrangeKP80(text) {
     { label: "FSH", patterns: ["FSH(?:\\s*\\(фоликуло-стимулиращ хормон\\))?"], unit: "m[IU]/mL" },
     { label: "Естрадиол", patterns: ["Естрадиол"], unit: "pmol/L" },
     { label: "Тестостерон", patterns: ["Тестостерон", "Testosteron"], unit: "" },
-    { label: "GH / Растежен хормон", patterns: ["GH", "Растежен хормон"], unit: "" },
-    { label: "IGF1", patterns: ["IGF1", "IGF-1"], unit: "" },
-    { label: "АКТХ", patterns: ["АКТХ", "AKTH"], unit: "" },
+    { label: "GH / Растежен хормон", patterns: ["Растежен хормон(?:\\s*/CTX/)?", "GH"], unit: "ng/mL" },
+    { label: "IGF-I", patterns: ["Инсулино-подобен растежен хормон 1 \\(IGF-I\\)", "IGF-I", "IGF-1", "IGF1"], unit: "ng/mL" },
+    { label: "АКТХ", patterns: ["АКТХ", "AKTH", "ACTH"], unit: "pg/mL" },
     { label: "Пролактин", patterns: ["Пролактин", "Prolactin"], unit: "" }
   ];
+  out += '<span class="inline-results">';
   hormones.forEach(function(p) {
     var val = extractParam(text, p.patterns, p.unit);
-    if (val) { out += formatLine(p.label, val); }
+    if (val) { out += formatLineInline(p.label, val); }
   });
-  // Show "not found" only if NONE found
+  out += '</span>\n';
   var anyHormone = hormones.some(function(p) { return extractParam(text, p.patterns, "") !== null; });
   if (!anyHormone) {
     out += '<span class="val-missing">Няма намерени хормонални изследвания</span>\n';
@@ -1091,24 +1092,23 @@ function arrangeKP80(text) {
   // Кортизол урина 24ч
   out += formatLine("Кортизол - урина 24ч", extractParam(text, ["Кортизол(?:\\s*-\\s*свободен)?(?:\\s*,?\\s*урина\\s*24)"], "ug/(24.h)"));
 
+  // ── Urine by date ──
+  out += '<span class="section-label">═══ УРИНА ═══</span>\n';
+  out += arrangeUrineByDate(text);
+
   out += '<span class="section-label">═══ ОБРАЗНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
-  // УЗД на шия
   var uzdText = extractFreeText(text, ["ЕХОГРАФИЯ НА ШИЯ", "УЗД на шия", "Ехография на шия"]);
   if (uzdText) out += '<span class="val-found">УЗД на шия: ' + uzdText + '</span>\n';
 
-  // ХИПОФИЗА МР
   var mrText = extractFreeText(text, ["ХИПОФИЗА МР", "МР на хипофиза", "хипофиза мр"]);
   if (mrText) out += '<span class="val-found">МР хипофиза: ' + mrText + '</span>\n';
 
-  // КТ
   var ktText = extractFreeText(text, ["КТ ", "KT ", "Компютърна томография"]);
   if (ktText) out += '<span class="val-found">КТ: ' + ktText + '</span>\n';
 
-  // Ехоскопия
   var echoText = extractFreeText(text, ["Ехоскопия на коремни органи", "ехоскопия на коремни органи"]);
   if (echoText) out += '<span class="val-found">Ехоскопия: ' + echoText + '</span>\n';
 
-  // Рентгенография
   var xrayText = extractFreeText(text, ["РЕНТГЕНОГРАФИЯ", "Рентгенография"]);
   if (xrayText) out += '<span class="val-found">Рентгенография: ' + xrayText + '</span>\n';
 
