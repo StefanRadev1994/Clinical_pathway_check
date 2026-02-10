@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Клинична Пътека — Валидатор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f0f2f5; --card: #ffffff; --primary: #1a56db; --primary-dark: #1642a8;
+      --text: #1e293b; --text-muted: #64748b; --border: #dde2e9;
+      --green: #16a34a; --green-bg: #ecfdf5; --green-border: #86efac;
+      --red: #dc2626; --red-bg: #fef2f2; --red-border: #fca5a5;
+      --amber-bg: #fffbeb; --amber-border: #fcd34d; --amber-text: #92400e;
+      --orange: #ea580c; --orange-bg: #fff7ed; --orange-border: #fdba74;
+      --radius: 14px; --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif; background: var(--bg);
+      color: var(--text); min-height: 100vh; padding: 24px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page-wrap { display: flex; gap: 18px; max-width: 1060px; margin: 0 auto; align-items: flex-start; }
+    .container { flex: 1; min-width: 0; max-width: 660px; }
+
+    /* Floating reminder */
+    .reminder-panel {
+      flex: 0 0 280px; position: sticky; top: 24px;
+      background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+      border: 2px solid #f9e14a; border-radius: 14px;
+      padding: 20px; box-shadow: 0 4px 20px rgba(249,225,74,0.18);
+      display: none; animation: slideIn 0.35s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .reminder-panel.visible { display: block; }
+    .reminder-title {
+      font-size: 13px; font-weight: 800; color: #b7791f;
+      display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .reminder-text { font-size: 14px; font-weight: 500; color: #744210; line-height: 1.55; }
+
+    @media (max-width: 860px) {
+      .page-wrap { flex-direction: column; align-items: stretch; }
+      .container { max-width: 100%; }
+      .reminder-panel { flex: none; position: static; }
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1a56db 0%, #3730a3 100%);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 24px 28px; display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow);
+    }
+    .header-icon {
+      width: 46px; height: 46px; background: rgba(255,255,255,0.15);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .header h1 { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .header p { font-size: 12px; color: rgba(200,215,255,0.85); margin-top: 3px; }
+
+    /* Card */
+    .card {
+      background: var(--card); border-radius: 0 0 var(--radius) var(--radius);
+      padding: 28px; box-shadow: var(--shadow);
+    }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    select, textarea {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px; color: var(--text); background: #fff; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, textarea:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+    }
+    textarea {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      height: 200px; resize: vertical; line-height: 1.6;
+    }
+    textarea::placeholder { color: #a0aec0; }
+    .field + .field { margin-top: 18px; }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 10px; margin-top: 22px; }
+    .btn-check {
+      flex: 1; padding: 14px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: var(--primary); border: none; border-radius: 12px;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(26,86,219,0.25);
+    }
+    .btn-check:hover { background: var(--primary-dark); }
+    .btn-check:active { transform: scale(0.985); }
+    .btn-check:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+    .btn-arrange {
+      flex: 1; padding: 14px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: #059669; border: none; border-radius: 12px;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(5,150,105,0.25);
+    }
+    .btn-arrange:hover { background: #047857; }
+    .btn-arrange:active { transform: scale(0.985); }
+    .btn-arrange:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+    .btn-reset {
+      flex: 0 0 52px; padding: 14px 0;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      background: #64748b; border: none; border-radius: 12px;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(100,116,139,0.25);
+    }
+    .btn-reset:hover { background: #475569; }
+
+    /* Results */
+    .results { margin-top: 24px; }
+    .progress-header {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px;
+    }
+    .progress-bar { width: 100%; height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+    .progress-fill.green { background: var(--green); }
+    .progress-fill.yellow { background: #eab308; }
+    .progress-fill.red { background: var(--red); }
+
+    /* Banners */
+    .banner {
+      margin-top: 18px; border-radius: 16px; padding: 36px 20px;
+      text-align: center; border-width: 2px; border-style: solid;
+      animation: bannerIn 0.4s ease;
+    }
+    @keyframes bannerIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .banner-success { background: var(--green-bg); border-color: var(--green-border); }
+    .banner-fail { background: var(--red-bg); border-color: var(--red-border); }
+    .banner-icon { font-size: 60px; margin-bottom: 8px; }
+    .banner h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .banner-success h2 { color: var(--green); }
+    .banner-fail h2 { color: var(--red); }
+    .banner .sub { margin-top: 6px; font-size: 14px; font-weight: 500; }
+    .banner-success .sub { color: #15803d; }
+    .banner-fail .sub { color: #b91c1c; }
+
+    .missing-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;
+      padding: 5px 12px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    }
+    .tag-group { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+
+    .warning-box {
+      margin-top: 18px; background: var(--amber-bg); border: 1.5px solid var(--amber-border);
+      border-radius: 12px; padding: 14px 18px; text-align: center;
+      color: var(--amber-text); font-weight: 500; font-size: 14px;
+    }
+    .warning-banner {
+      margin-top: 14px; background: var(--orange-bg);
+      border: 2px solid var(--orange-border); border-radius: 14px;
+      padding: 18px 22px; text-align: center;
+      animation: pulse 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 0 0 rgba(234,88,12,0.2); }
+      to { box-shadow: 0 0 0 8px rgba(234,88,12,0); }
+    }
+    .warning-banner-text {
+      font-size: 16px; font-weight: 800; color: var(--orange);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    /* Details */
+    .details-toggle {
+      margin-top: 16px; background: none; border: none;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px; font-weight: 600; color: var(--primary);
+      cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0;
+    }
+    .details-toggle:hover { color: var(--primary-dark); }
+    .details-grid {
+      margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px; max-height: 400px; overflow-y: auto; animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .detail-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    }
+    .detail-item.found { background: var(--green-bg); color: #166534; }
+    .detail-item.missing { background: var(--red-bg); color: #991b1b; font-weight: 600; }
+    .detail-item.group-header {
+      grid-column: 1 / -1; background: #f1f5f9; color: #475569;
+      font-weight: 700; font-size: 12px; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 6px 12px; margin-top: 6px;
+    }
+    .detail-item.group-ok { background: #ecfdf5; color: #166534; }
+    .detail-item.group-fail { background: #fef2f2; color: #991b1b; font-weight: 600; }
+    .detail-icon { flex-shrink: 0; }
+
+    /* Arranged output */
+    .arranged-output {
+      margin-top: 24px; background: #f8fafc; border: 1.5px solid var(--border);
+      border-radius: 12px; overflow: hidden; animation: fadeIn 0.3s ease;
+    }
+    .arranged-header {
+      background: #059669; color: #fff; padding: 12px 18px;
+      font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .btn-copy {
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-copy:hover { background: rgba(255,255,255,0.3); }
+    .arranged-body {
+      padding: 18px; font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 1.8; white-space: pre-wrap;
+      max-height: 500px; overflow-y: auto; color: var(--text);
+    }
+    .val-found { color: #059669; font-weight: 600; }
+    .val-missing { color: #dc2626; font-weight: 600; font-style: italic; }
+    .val-ketone { color: #dc2626; font-weight: 800; background: #fef2f2; padding: 1px 6px; border-radius: 4px; }
+    .section-label { color: #1a56db; font-weight: 700; display: block; margin-top: 10px; }
+    .inline-results { display: inline; }
+    .inline-results span { white-space: nowrap; }
+    .bold-label { font-weight: 800; }
+    .egfr-box {
+      margin-top: 8px; padding: 10px 14px; border-radius: 10px;
+      border: 2px solid #6366f1; background: #eef2ff;
+      font-size: 13px; line-height: 1.6;
+    }
+    .egfr-box b { color: #4338ca; }
+    .egfr-stage { font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+    .egfr-stage.g1 { background: #dcfce7; color: #166534; }
+    .egfr-stage.g2 { background: #fef9c3; color: #854d0e; }
+    .egfr-stage.g3a { background: #fed7aa; color: #9a3412; }
+    .egfr-stage.g3b { background: #fdba74; color: #7c2d12; }
+    .egfr-stage.g4 { background: #fecaca; color: #991b1b; }
+    .egfr-stage.g5 { background: #dc2626; color: #fff; }
+    .patient-input-panel {
+      margin-top: 16px; padding: 18px; background: #f8fafc;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      animation: fadeIn 0.3s ease;
+    }
+    .patient-input-panel h3 {
+      font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px;
+    }
+    .patient-fields { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .patient-field label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    .patient-field input, .patient-field select {
+      width: 120px; padding: 8px 10px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px; outline: none;
+    }
+    .patient-field input:focus, .patient-field select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,86,219,0.1);
+    }
+    .btn-compute {
+      padding: 8px 18px; background: #059669; color: #fff; border: none;
+      border-radius: 8px; font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-compute:hover { background: #047857; }
+
+    @media (max-width: 500px) {
+      .details-grid { grid-template-columns: 1fr; }
+      .banner h2 { font-size: 22px; }
+      .banner-icon { font-size: 48px; }
+    }
+    .footer { text-align: center; font-size: 11px; color: #a0aec0; margin-top: 18px; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">🏥</div>
+      <div>
+        <h1>Клинична Пътека — Валидатор</h1>
+        <p>Проверка за наличие на задължителни изследвания</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label for="pathway">Клинична пътека:</label>
+        <select id="pathway">
+          <option value="">— Изберете клинична пътека —</option>
+          <option value="АП 13">АП 13</option>
+          <option value="АП 14">АП 14 (очаквайте скоро)</option>
+          <option value="АП 15">АП 15 (очаквайте скоро)</option>
+          <option value="КП 78.1">КП 78.1</option>
+          <option value="КП 79.1">КП 79.1</option>
+          <option value="КП 80.1">КП 80.1</option>
+          <option value="КП 81.1">КП 81.1</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="inputText">Текст за проверка:</label>
+        <textarea id="inputText" placeholder="Поставете текста с резултати от изследвания тук..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn-check" id="checkBtn" disabled>🔍 Провери</button>
+        <button class="btn-arrange" id="arrangeBtn" disabled>📋 Подреди</button>
+        <button class="btn-reset" id="resetBtn" title="Изчисти">🔄</button>
+      </div>
+      <div id="results" class="results"></div>
+      <div id="arranged" class="results"></div>
+    </div>
+    <p class="footer">Клинична Пътека Валидатор v2.0</p>
+  </div>
+
+  <!-- Floating reminder panel -->
+  <div class="reminder-panel" id="reminderPanel">
+    <div class="reminder-title">💊 Напомняне</div>
+    <div class="reminder-text" id="reminderText"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  REMINDER MESSAGES
+// ═══════════════════════════════════════════════
+var REMINDERS = {
+  "КП 78.1": "Не забравяй, че трябва да има изписани ДВЕ различни лечебни вещества (напр. електролит + лечебно вещество).",
+  "КП 79.1": "Не забравяй, че трябва да има изписано ЕДНО лечебно вещество (напр. електролит или др.).",
+  "КП 80.1": "Не забравяй, че трябва да има изписано ЕДНО лечебно вещество (напр. електролит или др.).",
+  "КП 81.1": "Не забравяй, че трябва да има изписано ЕДНО лечебно вещество (напр. електролит или др.).",
+  "КП 83.3": "Не забравяй, че трябва да има изписано ЕДНО лечебно вещество (напр. електролит или др.).",
+  "АП 13": "Не забравяй, че трябва да има изписано ЕДНО лечебно вещество (напр. електролит или др.)."
+};
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function matchSingle(text, kw) {
+  if (kw.alternatives) return kw.alternatives.some(function(a) { return text.indexOf(a) !== -1; });
+  if (kw.regex) return kw.regex.test(text);
+  return text.indexOf(kw.search) !== -1;
+}
+
+// Normalize text: remove invisible characters that hospital systems embed
+function normalizeText(raw) {
+  return raw
+    .replace(/[\u200B\u200C\u200D\uFEFF\u00AD\u200E\u200F\u202A-\u202E]/g, '')  // zero-width & direction chars
+    .replace(/\u00A0/g, ' ')  // non-breaking space → regular space
+    .replace(/\s+/g, function(m) { return m.indexOf('\n') !== -1 ? '\n' : ' '; }); // collapse whitespace
+}
+
+// Extract ALL values for a parameter from text
+function extractAllValues(text, pattern) {
+  var results = [];
+  var re = new RegExp(pattern, 'g');
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    results.push(m[1]);
+  }
+  return results;
+}
+
+// Extract a free-text block starting from a marker to the next section or semicolon block
+function extractFreeText(text, startMarker) {
+  for (var i = 0; i < startMarker.length; i++) {
+    var idx = text.indexOf(startMarker[i]);
+    if (idx !== -1) {
+      // grab from that marker to the end of sentence / next major section
+      var sub = text.substring(idx);
+      // Try to find a natural endpoint
+      var endPatterns = [/\n\n/, /Лаб\.№/, /\d{2}\.\d{2}\.\d{4}\s*-\s*(?!.*$)/];
+      var endIdx = sub.length;
+      // just take a reasonable chunk - up to 500 chars or next Лаб.№
+      var labIdx = sub.indexOf("Лаб.№", 10);
+      if (labIdx > 0) endIdx = labIdx;
+      return sub.substring(0, endIdx).trim();
+    }
+  }
+  return null;
+}
+
+// Shared keyword sets
+var BLOOD_COUNT = [
+  { label: "Левкоцити", search: "Левкоцити" },
+  { label: "Хемоглобин", search: "Хемоглобин" },
+  { label: "Еритроцити", search: "Еритроцити" },
+  { label: "Хематокрит", search: "Хематокрит" },
+  { label: "MCV", regex: /\bMCV\b/ },
+  { label: "MCH", regex: /\bMCH\b/ },
+  { label: "MCHC", regex: /\bMCHC\b/ },
+  { label: "Тромбоцити", search: "Тромбоцити" }
+];
+var THYROID_PANEL = [
+  { label: "FT4", regex: /\bFT4\b/ },
+  { label: "TSH", regex: /\bTSH\b/ },
+  { label: "Anti TG (TAT)", search: "Anti TG" },
+  { label: "Anti-TPO (MAT)", search: "Anti-TPO" }
+];
+var UZD_SHIA = { label: "УЗД на шия / Ехография на шия", alternatives: ["УЗД на шия", "ЕХОГРАФИЯ НА ШИЯ", "Ехография на шия", "ехография на шия"] };
+
+
+// ═══════════════════════════════════════════════
+//  PATHWAY CHECK FUNCTIONS
+// ═══════════════════════════════════════════════
+function checkPathway(pathway, text) {
+  switch (pathway) {
+    case "КП 78.1": return checkKP78(text);
+    case "КП 79.1": return checkKP79(text);
+    case "КП 80.1": return checkKP80(text);
+    case "КП 81.1": return checkKP81(text);
+    case "АП 13":   return checkAP13(text);
+    default: return null;
+  }
+}
+
+function checkKP78(text) {
+  var items = [];
+  BLOOD_COUNT.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var biochem = [
+    { label: "ASAT", regex: /\bASAT\b/ },
+    { label: "ALAT", regex: /\bALAT\b/ },
+    { label: "GGT", regex: /\bGGT\b/ },
+    { label: "Алкална фосфатаза / АФ", alternatives: ["Алкална фосфатаза", "АФ"] },
+    { label: "Холестерол", search: "Холестерол" },
+    { label: "HDL", regex: /\bHDL\b/ },
+    { label: "LDL", regex: /\bLDL\b/ },
+    { label: "Триглицериди", search: "Триглицериди" },
+    { label: "Креатинин - серум", search: "Креатинин - серум" },
+    { label: "Урея", search: "Урея" },
+    { label: "Гликиран хемоглобин", search: "Гликиран хемоглобин" }
+  ];
+  biochem.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var glucose = [
+    { label: "Глюкоза - профил 6ч", search: "Глюкоза - профил 6ч" },
+    { label: "Глюкоза - профил 12ч", search: "Глюкоза - профил 12ч" },
+    { label: "Глюкоза - профил 18ч", search: "Глюкоза - профил 18ч" }
+  ];
+  glucose.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var urineStrip = [
+    { label: "Специфично тегло - урина", search: "Специфично тегло - урина" },
+    { label: "Урина - микроалбумин", search: "Урина - микроалбумин" },
+    { label: "Урина - аскорбинова к-на", search: "аскорбинова к-на" },
+    { label: "pH - урина", search: "pH - урина" },
+    { label: "Белтък - урина", search: "Белтък - урина" },
+    { label: "Глюкоза - урина", search: "Глюкоза - урина" },
+    { label: "Кетотела - урина", search: "Кетотела - урина" },
+    { label: "Билирубин - урина", search: "Билирубин - урина" },
+    { label: "Уробилиноген - урина", search: "Уробилиноген - урина" },
+    { label: "Нитрити - урина", search: "Нитрити - урина" },
+    { label: "Кръв - урина", search: "Кръв - урина" },
+    { label: "Урина - левкоцити", search: "Урина - левкоцити" }
+  ];
+  urineStrip.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var sediment = [
+    { label: "Седимент - ЕРИТРОЦИТИ", search: "Седимент урина - ЕРИТРОЦИТИ" },
+    { label: "Седимент - ЛЕВКОЦИТИ", search: "Седимент урина - ЛЕВКОЦИТИ" },
+    { label: "Седимент - групирани левкоцити", search: "групирани левкоцити" },
+    { label: "Седимент - сквамозни еп. клетки", search: "сквамозни" },
+    { label: "Седимент - НЕсквамозни еп. клетки", search: "НЕсквамозни" },
+    { label: "Седимент - бактерии", search: "Седимент урина - бактерии" },
+    { label: "Седимент - кристали", search: "Седимент урина - кристали" },
+    { label: "Седимент - СЛУЗ", search: "Седимент урина - СЛУЗ" },
+    { label: "Седимент - хиалинни цилиндри", search: "хиалинни цилиндри" },
+    { label: "Седимент - НЕхиалинни цилиндри", search: "НЕхиалинни цилиндри" },
+    { label: "Седимент - гъбички (Candida)", search: "Candida" },
+    { label: "Седимент - сперматозоиди", search: "сперматозоиди" }
+  ];
+  sediment.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var albCr = [
+    { label: "Албумин в урина", search: "Албумин в урина" },
+    { label: "Креатинин - урина", search: "Креатинин - урина" },
+    { label: "Отношение албумин/креатинин (AKR)", search: "AKR" }
+  ];
+  albCr.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  items.push({ label: "ЕКГ", found: /[ЕE][КK][ГG]/i.test(text), type: "required" });
+  return { items: items, warnings: [] };
+}
+
+function checkKP79(text) {
+  var items = [];
+  BLOOD_COUNT.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  THYROID_PANEL.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  items.push({ label: UZD_SHIA.label, found: matchSingle(text, UZD_SHIA), type: "required" });
+  return { items: items, warnings: [] };
+}
+
+function checkKP80(text) {
+  var items = [];
+  BLOOD_COUNT.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var hormones = [
+    { label: "FT4", regex: /\bFT4\b/ },
+    { label: "Кортизол - серум", search: "Кортизол" },
+    { label: "LH", regex: /\bLH\b/ },
+    { label: "FSH", regex: /\bFSH\b/ },
+    { label: "Естрадиол", search: "Естрадиол" },
+    { label: "Тестостерон", alternatives: ["Testosteron", "Тестостерон"] },
+    { label: "GH / Растежен хормон", alternatives: ["GH", "Растежен хормон"] },
+    { label: "IGF1", regex: /\bIGF1\b|IGF-1/ },
+    { label: "АКТХ", alternatives: ["AKTH", "АКТХ"] },
+    { label: "TSH / ТСХ", alternatives: ["TSH", "ТСХ"] },
+    { label: "Пролактин", alternatives: ["Prolactin", "Пролактин"] }
+  ];
+  var hormoneFound = hormones.some(function(kw) { return matchSingle(text, kw); });
+  items.push({
+    label: "Поне 1 хормон",
+    found: hormoneFound, type: "oneOf",
+    subItems: hormones.map(function(kw) { return { label: kw.label, found: matchSingle(text, kw) }; })
+  });
+  items.push({ label: "Кортизол - урина 24ч", found: text.indexOf("Кортизол") !== -1 && text.indexOf("урина") !== -1, type: "required" });
+  var imaging = [
+    { label: "УЗД на шия / Ехография", alternatives: ["УЗД на шия", "ЕХОГРАФИЯ НА ШИЯ", "Ехография на шия", "ехография на шия"] },
+    { label: "ХИПОФИЗА МР", alternatives: ["ХИПОФИЗА МР", "хипофиза мр", "МР на хипофиза"] },
+    { label: "КТ", alternatives: ["KT", "КТ", "Компютърна томография"] },
+    { label: "Ехоскопия коремни органи", alternatives: ["Ехоскопия на коремни органи", "ехоскопия на коремни органи"] },
+    { label: "РЕНТГЕНОГРАФИЯ", alternatives: ["РЕНТГЕНОГРАФИЯ", "Рентгенография", "рентгенография", "Рентгенограф"] }
+  ];
+  var imagingFound = imaging.some(function(kw) { return matchSingle(text, kw); });
+  items.push({
+    label: "Поне 1 образно изследване",
+    found: imagingFound, type: "oneOf",
+    subItems: imaging.map(function(kw) { return { label: kw.label, found: matchSingle(text, kw) }; })
+  });
+  return { items: items, warnings: [] };
+}
+
+function checkKP81(text) {
+  var items = [];
+  BLOOD_COUNT.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  var kp81 = [
+    { label: "ASAT", regex: /\bASAT\b/ },
+    { label: "ALAT", regex: /\bALAT\b/ },
+    { label: "GGT", regex: /\bGGT\b/ },
+    { label: "Алкална фосфатаза", search: "Алкална фосфатаза" },
+    { label: "Холестерол", search: "Холестерол" },
+    { label: "VLDL", regex: /\bVLDL\b/ },
+    { label: "HDL", regex: /\bHDL\b/ },
+    { label: "LDL", regex: /\bLDL\b/ },
+    { label: "Триглицериди", search: "Триглицериди" },
+    { label: "Креатинин - серум", search: "Креатинин - серум" },
+    { label: "Урея", search: "Урея" },
+    { label: "cCa++", regex: /cCa/ },
+    { label: "Калций", search: "Калций" },
+    { label: "Неорганичен фосфат", search: "Неорганичен фосфат" },
+    { label: "Mg", regex: /\bMg\b/ },
+    { label: "Натрий", search: "Натрий" },
+    { label: "Калий", search: "Калий" },
+    { label: "Хлорид", search: "Хлорид" },
+    { label: "PTH", regex: /\bPTH\b/ },
+    { label: "25 OH Vitamin D TOTAL", search: "25 OH Vitamin D" },
+    { label: "Beta Cross Laps", search: "Beta Cross Laps" },
+    { label: "Креатининов клирънс", search: "Креатининов клирънс" },
+    { label: "Креатинин - урина", search: "Креатинин - урина" },
+    { label: "Калций 24ч- урина", search: "Калций 24ч" },
+    { label: "Фосфор 24ч- урина", search: "Фосфор 24ч" },
+    { label: "Диуреза (Д-мл)", regex: /Д-\d/ },
+    { label: "Остеометрия на две области", search: "Остеометрия" },
+    { label: "УЗД на шия", search: "УЗД на шия" }
+  ];
+  kp81.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+  return { items: items, warnings: [] };
+}
+
+function checkAP13(text) {
+  var items = [];
+  var warnings = [];
+  items.push({ label: UZD_SHIA.label, found: matchSingle(text, UZD_SHIA), type: "required" });
+  var hasCytology = text.indexOf("Цитологично изследване") !== -1 || text.indexOf("цитологично изследване") !== -1 || text.indexOf("тънкоиглена аспирационна биопсия") !== -1 || text.indexOf("ТАБ") !== -1;
+  items.push({ label: "Цитологично изследване / ТАБ", found: hasCytology, type: "required" });
+  if (!hasCytology) {
+    items.push({ label: "── Няма цитология → нужни са допълнителни изследвания ──", found: false, type: "conditional-info" });
+    BLOOD_COUNT.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+    THYROID_PANEL.forEach(function(kw) { items.push({ label: kw.label, found: matchSingle(text, kw), type: "required" }); });
+    warnings.push("⚠️ Не забравяй да изпишеш лечебно вещество!!!");
+  }
+  return { items: items, warnings: warnings };
+}
+
+
+// ═══════════════════════════════════════════════
+//  VALUE EXTRACTION / ARRANGE
+// ═══════════════════════════════════════════════
+
+// Generic extractor: finds all occurrences of "label ... - VALUE"
+function extractParam(text, paramPatterns, unit) {
+  for (var p = 0; p < paramPatterns.length; p++) {
+    var pattern = paramPatterns[p];
+    var vals = extractAllValues(text, pattern + '(?:\\s*\\([^)]*\\))?\\s*-\\s*([\\d.,><!=]+)');
+    if (vals.length > 0) {
+      return vals.map(function(v, i) {
+        return (i === 0 ? '' : ' ; ') + v + (unit ? ' ' + unit : '');
+      }).join('');
+    }
+  }
+  return null;
+}
+
+function formatLine(label, value, unit) {
+  if (value !== null) {
+    return '<span>' + label + ' - <span class="val-found">' + value + '</span></span>\n';
+  }
+  return '<span>' + label + ' - <span class="val-missing">не е намерено</span></span>\n';
+}
+
+function formatLineBold(label, value) {
+  if (value !== null) {
+    return '<span><b class="bold-label">' + label + '</b> - <span class="val-found">' + value + '</span></span>\n';
+  }
+  return '<span><b class="bold-label">' + label + '</b> - <span class="val-missing">не е намерено</span></span>\n';
+}
+
+function formatLineInline(label, value) {
+  if (value !== null) {
+    return '<span>' + label + ' - <span class="val-found">' + value + '</span></span>; ';
+  }
+  return '<span>' + label + ' - <span class="val-missing">???</span></span>; ';
+}
+
+function arrangeKP81(text) {
+  var out = '';
+  var params = [
+    { label: "Левкоцити", patterns: ["Левкоцити(?:\\s*\\(WBC\\))?"], unit: "10*9/L" },
+    { label: "Хемоглобин", patterns: ["Хемоглобин(?:\\s*\\(HGB\\))?"], unit: "g/L" },
+    { label: "Еритроцити", patterns: ["Еритроцити(?:\\s*\\(RBC\\))?"], unit: "10*12/L" },
+    { label: "Хематокрит", patterns: ["Хематокрит(?:\\s*\\(HCT\\))?"], unit: "L/L" },
+    { label: "MCV", patterns: ["MCV"], unit: "fL" },
+    { label: "MCH", patterns: ["MCH(?!C)"], unit: "pg" },
+    { label: "MCHC", patterns: ["MCHC"], unit: "g/L" },
+    { label: "Тромбоцити", patterns: ["Тромбоцити(?:\\s*\\(PLT\\))?"], unit: "10*9/L" },
+    { label: "ASAT", patterns: ["(?:Аспартат аминотрансфераза \\(ASAT\\)|ASAT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "ALAT", patterns: ["(?:Аланин аминотрансфераза \\(ALAT\\)|ALAT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "GGT", patterns: ["(?:Гама глутамил трансфераза \\(GGT\\)|GGT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "Алкална фосфатаза", patterns: ["Алкална фосфатаза"], unit: "U/L" },
+    { label: "Холестерол", patterns: ["Холестерол"], unit: "mmol/L" },
+    { label: "VLDL", patterns: ["VLDL"], unit: "mmol/L" },
+    { label: "HDL", patterns: ["HDL(?!\\s)"], unit: "mmol/L" },
+    { label: "LDL", patterns: ["LDL(?!\\s)"], unit: "mmol/L" },
+    { label: "Триглицериди", patterns: ["Триглицериди"], unit: "mmol/L" },
+    { label: "Креатинин - серум", patterns: ["Креатинин - серум"], unit: "umol/L" },
+    { label: "Урея", patterns: ["Урея"], unit: "mmol/L" },
+    { label: "cCa++", patterns: ["cCa\\s*\\+*\\s*(?:/[^/]*/)?"], unit: "mmol/L" },
+    { label: "Калций", patterns: ["Калций(?!\\s*24)"], unit: "mmol/L" },
+    { label: "Неорганичен фосфат", patterns: ["Неорганичен фосфат"], unit: "mmol/L" },
+    { label: "Mg", patterns: ["Mg"], unit: "mmol/L" },
+    { label: "Натрий", patterns: ["Натрий"], unit: "mmol/L" },
+    { label: "Калий", patterns: ["Калий(?!\\s*24)"], unit: "mmol/L" },
+    { label: "Хлорид", patterns: ["Хлорид"], unit: "mmol/L" },
+    { label: "PTH", patterns: ["PTH"], unit: "pg/mL" },
+    { label: "25 OH Vitamin D TOTAL", patterns: ["25 OH Vitamin D(?:\\s*TOTAL)?"], unit: "ng/mL" },
+    { label: "Beta Cross Laps", patterns: ["Beta Cross Laps"], unit: "ng/mL" },
+    { label: "Инсулин - серум", patterns: ["Инсулин(?:\\s*-\\s*серум)?"], unit: "u[IU]/mL" },
+    { label: "ОГТТ Глюкоза на гладно", patterns: ["ОГТТ Глюкоза на гладно"], unit: "mmol/L" },
+    { label: "Глюкоза - втори час", patterns: ["Глюкоза - втори час"], unit: "mmol/L" },
+  ];
+
+  out += '<span class="section-label">═══ КРЪВНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  params.forEach(function(p) {
+    var val = extractParam(text, p.patterns, p.unit);
+    out += formatLine(p.label, val);
+  });
+
+  // Urine section
+  out += '<span class="section-label">═══ УРИНА ═══</span>\n';
+  var urineParams = [
+    { label: "Креатинин - серум (повторен)", patterns: ["Креатинин - серум"], unit: "umol/L", idx: 1 },
+    { label: "Креатининов клирънс", patterns: ["Креатининов клирънс"], unit: "mL/min" },
+    { label: "Креатинин - урина", patterns: ["Креатинин - урина"], unit: "umol/L" },
+    { label: "Калций 24ч- урина", patterns: ["Калций 24ч"], unit: "mmol/L" },
+    { label: "Фосфор 24ч- урина", patterns: ["Фосфор 24ч"], unit: "mmol/L" },
+  ];
+  urineParams.forEach(function(p) {
+    if (p.idx) {
+      // Get specific occurrence
+      var allVals = extractAllValues(text, p.patterns[0] + '(?:\\s*\\([^)]*\\))?\\s*-\\s*([\\d.,]+)');
+      if (allVals.length > p.idx) {
+        out += formatLine(p.label, allVals[p.idx] + ' ' + p.unit);
+      } else if (allVals.length > 0) {
+        out += formatLine(p.label, allVals[allVals.length - 1] + ' ' + p.unit);
+      } else {
+        out += formatLine(p.label, null);
+      }
+    } else {
+      var val = extractParam(text, p.patterns, p.unit);
+      out += formatLine(p.label, val);
+    }
+  });
+
+  // Diuresis
+  var diuresisMatch = text.match(/Д-(\d+)\s*мл/);
+  out += formatLine("Диуреза", diuresisMatch ? diuresisMatch[1] + ' мл' : null);
+
+  // Osteometry
+  out += '<span class="section-label">═══ ОСТЕОМЕТРИЯ ═══</span>\n';
+  var osteoText = extractFreeText(text, ["Остеометрия"]);
+  if (osteoText) {
+    out += '<span class="val-found">' + osteoText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерена остеометрия</span>\n';
+  }
+
+  // FRAX
+  var majorMatch = text.match(/Major osteoporotic risk\s*[:\-]?\s*([\d.,]+\s*%?)/i);
+  var hipMatch = text.match(/Hip Fracture risk\s*[:\-]?\s*([\d.,]+\s*%?)/i);
+  if (majorMatch || hipMatch) {
+    out += '<span class="section-label">═══ FRAX ═══</span>\n';
+    out += formatLine("Major osteoporotic risk", majorMatch ? majorMatch[1] : null);
+    out += formatLine("Hip Fracture risk", hipMatch ? hipMatch[1] : null);
+  }
+
+  // УЗД на шия
+  out += '<span class="section-label">═══ ЕХОГРАФИЯ НА ШИЯ ═══</span>\n';
+  var uzdText = extractFreeText(text, ["ЕХОГРАФИЯ НА ШИЯ", "УЗД на шия", "Ехография на шия"]);
+  if (uzdText) {
+    out += '<span class="val-found">' + uzdText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерена ехография на шия</span>\n';
+  }
+
+  // ЕКГ
+  out += '<span class="section-label">═══ ЕКГ ═══</span>\n';
+  var ekgText = extractFreeText(text, ["ЕКГ-", "ЕКГ -", "ЕКГ:"]);
+  if (ekgText) {
+    out += '<span class="val-found">' + ekgText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерено ЕКГ</span>\n';
+  }
+
+  return out;
+}
+
+// ── Shared blood count extractor ──
+function arrangeBloodCount(text) {
+  var out = '<span class="inline-results">';
+  var bc = [
+    { label: "Левкоцити", patterns: ["Левкоцити(?:\\s*\\(WBC\\))?"], unit: "10*9/L" },
+    { label: "Хемоглобин", patterns: ["Хемоглобин(?:\\s*\\(HGB\\))?"], unit: "g/L" },
+    { label: "Еритроцити", patterns: ["Еритроцити(?:\\s*\\(RBC\\))?"], unit: "10*12/L" },
+    { label: "Хематокрит", patterns: ["Хематокрит(?:\\s*\\(HCT\\))?"], unit: "L/L" },
+    { label: "MCV", patterns: ["MCV"], unit: "fL" },
+    { label: "MCH", patterns: ["MCH(?!C)"], unit: "pg" },
+    { label: "MCHC", patterns: ["MCHC"], unit: "g/L" },
+    { label: "Тромбоцити", patterns: ["Тромбоцити(?:\\s*\\(PLT\\))?"], unit: "10*9/L" }
+  ];
+  bc.forEach(function(p) { out += formatLineInline(p.label, extractParam(text, p.patterns, p.unit)); });
+  out += '</span>\n';
+  return out;
+}
+
+// ── Shared EKG extractor ──
+function arrangeEKG(text) {
+  var out = '<span class="section-label">═══ ЕКГ ═══</span>\n';
+  var ekgText = extractFreeText(text, ["ЕКГ-", "ЕКГ -", "ЕКГ:", "EKG-", "EKG -", "EKG:"]);
+  if (ekgText) {
+    out += '<span class="val-found">' + ekgText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерено ЕКГ</span>\n';
+  }
+  return out;
+}
+
+// ── Shared UZD extractor ──
+function arrangeUZD(text) {
+  var out = '<span class="section-label">═══ ЕХОГРАФИЯ НА ШИЯ ═══</span>\n';
+  var uzdText = extractFreeText(text, ["ЕХОГРАФИЯ НА ШИЯ", "УЗД на шия", "Ехография на шия"]);
+  if (uzdText) {
+    out += '<span class="val-found">' + uzdText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерена ехография на шия</span>\n';
+  }
+  return out;
+}
+
+// ══════════════════════════════════════
+//  eGFR CKD-EPI 2021
+// ══════════════════════════════════════
+function ckdEpi2021(scrUmol, age, sex) {
+  // Convert umol/L to mg/dL: divide by 88.42
+  var scrMgdl = scrUmol / 88.42;
+  var kappa, alpha, genderFactor;
+  if (sex === 'female') {
+    kappa = 0.7; alpha = -0.241; genderFactor = 1.012;
+  } else {
+    kappa = 0.9; alpha = -0.302; genderFactor = 1.0;
+  }
+  var scrRatio = scrMgdl / kappa;
+  var egfr = 142 * Math.pow(Math.min(scrRatio, 1), alpha)
+           * Math.pow(Math.max(scrRatio, 1), -1.200)
+           * Math.pow(0.9938, age)
+           * genderFactor;
+  return Math.round(egfr * 10) / 10;
+}
+
+function getCKDStage(egfr) {
+  if (egfr >= 90)  return { stage: "G1", label: "Нормална или висока", cls: "g1" };
+  if (egfr >= 60)  return { stage: "G2", label: "Леко намалена", cls: "g2" };
+  if (egfr >= 45)  return { stage: "G3a", label: "Леко до умерено намалена", cls: "g3a" };
+  if (egfr >= 30)  return { stage: "G3b", label: "Умерено до тежко намалена", cls: "g3b" };
+  if (egfr >= 15)  return { stage: "G4", label: "Тежко намалена", cls: "g4" };
+  return { stage: "G5", label: "Бъбречна недостатъчност", cls: "g5" };
+}
+
+function getCreatinineForEGFR(text) {
+  // Get all creatinine-serum values, use the last one (or lowest if only one)
+  var allVals = extractAllValues(text, 'Креатинин - серум(?:\\s*\\([^)]*\\))?\\s*-\\s*([\\d.,]+)');
+  if (allVals.length === 0) return null;
+  var nums = allVals.map(function(v) { return parseFloat(v.replace(',', '.')); });
+  // Use the last value; if multiple, also find lowest as fallback
+  return nums[nums.length - 1];
+}
+
+function computeEGFR(text, age, sex) {
+  var scr = getCreatinineForEGFR(text);
+  if (!scr || !age || !sex) return '';
+
+  var egfr = ckdEpi2021(scr, age, sex);
+  var ckd = getCKDStage(egfr);
+
+  return '<div class="egfr-box">' +
+    '<b>eGFR (CKD-EPI 2021)</b> = <span class="val-found">' + egfr + ' mL/min/1.73m²</span>' +
+    ' &nbsp;→&nbsp; <span class="egfr-stage ' + ckd.cls + '">' + ckd.stage + ': ' + ckd.label + '</span>' +
+    '<br><span style="font-size:11px;color:#64748b;">Креатинин: ' + scr + ' umol/L | Възраст: ' + age + ' | Пол: ' + (sex === 'male' ? 'мъж' : 'жена') + '</span>' +
+    '</div>\n';
+}
+
+// ══════════════════════════════════════
+//  ARRANGE: КП 78.1
+// ══════════════════════════════════════
+function arrangeKP78(text, age, sex) {
+  var out = '';
+
+  out += '<span class="section-label">═══ КРЪВНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  out += arrangeBloodCount(text);
+
+  out += '<span class="inline-results">';
+  var biochem = [
+    { label: "ASAT", patterns: ["(?:Аспартат аминотрансфераза \\(ASAT\\)|ASAT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "ALAT", patterns: ["(?:Аланин аминотрансфераза \\(ALAT\\)|ALAT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "GGT", patterns: ["(?:Гама глутамил трансфераза \\(GGT\\)|GGT)(?:\\s*-\\s*серум)?"], unit: "U/L" },
+    { label: "Алкална фосфатаза", patterns: ["Алкална фосфатаза"], unit: "U/L" },
+    { label: "Холестерол", patterns: ["Холестерол"], unit: "mmol/L" },
+    { label: "HDL", patterns: ["HDL[^;]*?"], unit: "mmol/L" },
+    { label: "LDL", patterns: ["LDL[^;]*?"], unit: "mmol/L" },
+    { label: "Триглицериди", patterns: ["Триглицериди"], unit: "mmol/L" },
+    { label: "Креатинин - серум", patterns: ["Креатинин - серум"], unit: "umol/L" },
+    { label: "Урея", patterns: ["Урея"], unit: "mmol/L" },
+    { label: "Натрий", patterns: ["Натрий"], unit: "mmol/L" },
+    { label: "Калий", patterns: ["Калий(?!\\s*24)"], unit: "mmol/L" },
+    { label: "Хлорид", patterns: ["Хлорид"], unit: "mmol/L" }
+  ];
+  biochem.forEach(function(p) { out += formatLineInline(p.label, extractParam(text, p.patterns, p.unit)); });
+  out += '</span>\n';
+
+  // Bold Гликиран хемоглобин on its own line
+  out += formatLineBold("Гликиран хемоглобин", extractParam(text, ["Гликиран хемоглобин"], "%"));
+
+  // eGFR CKD-EPI 2021
+  out += computeEGFR(text, age, sex);
+
+  // ── Glucose profiles by day ──
+  out += '<span class="section-label">═══ ГЛЮКОЗЕН ПРОФИЛ ═══</span>\n';
+  out += arrangeGlucoseByDay(text);
+
+  // ── Urine by date ──
+  out += '<span class="section-label">═══ УРИНА ═══</span>\n';
+  out += arrangeUrineByDate(text);
+
+  // ── Albumin / Creatinine ──
+  out += formatLine("Микроалбуминурия", extractParam(text, ["Урина - микроалбумин"], ""));
+  out += formatLine("Албумин в урина", extractParam(text, ["Албумин в урина"], "mg/L"));
+  var akrMatch = text.match(/\(AKR\)[^-]*?-\s*([\d.,]+)/);
+  var akrVal = akrMatch ? akrMatch[1] + ' g/mol{creat}' : null;
+  out += formatLine("Албумин/креатинин отношение (AKR)", akrVal);
+
+  // EKG
+  out += arrangeEKG(text);
+
+  // Other tests
+  out += '<span class="section-label">═══ ДРУГИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  var otherTests = [];
+  if (text.indexOf("D-димер") !== -1) otherTests.push("D-димер: " + (extractParam(text, ["D-димер"], "mg/L") || ""));
+  if (text.indexOf("CRP") !== -1) otherTests.push("CRP: " + (extractParam(text, ["CRP"], "mg/L") || ""));
+  if (text.indexOf("СУЕ") !== -1) otherTests.push("СУЕ: " + (extractParam(text, ["СУЕ(?:\\s*апаратен анализ)?"], "mm/h") || ""));
+  if (text.indexOf("Протромбиново") !== -1) otherTests.push("Протромбиново време (INR): " + (extractParam(text, ["Протромбиново време INR"], "") || ""));
+  if (otherTests.length > 0) {
+    out += '<span class="val-found">' + otherTests.join('\n') + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Няма допълнителни изследвания</span>\n';
+  }
+
+  return out;
+}
+
+// ── Extract glucose profiles grouped by day ──
+function arrangeGlucoseByDay(text) {
+  var out = '';
+  var blocks = text.split(/Лаб\.№\s*/);
+  var dayMap = {};  // date -> { g6, g12, g18, g24 }
+  var dateOrder = [];
+
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i];
+    var hasGlucose = block.indexOf("Глюкоза - профил") !== -1 || block.indexOf("Глюкоза - 24 ч") !== -1;
+    if (!hasGlucose) continue;
+
+    var dateMatch = block.match(/Дата\s+(\d{2}\.\d{2}\.\d{4})/);
+    var date = dateMatch ? dateMatch[1] : "неизвестна дата";
+
+    if (!dayMap[date]) {
+      dayMap[date] = {};
+      dateOrder.push(date);
+    }
+
+    var g6  = block.match(/Глюкоза - профил 6ч\s*-\s*([\d.,]+)/);
+    var g12 = block.match(/Глюкоза - профил 12ч\s*-\s*([\d.,]+)/);
+    var g18 = block.match(/Глюкоза - профил 18ч\s*-\s*([\d.,]+)/);
+    var g24 = block.match(/Глюкоза - 24 ч\.\s*-\s*([\d.,]+)/);
+
+    if (g6  && !dayMap[date].g6)  dayMap[date].g6  = g6[1];
+    if (g12 && !dayMap[date].g12) dayMap[date].g12 = g12[1];
+    if (g18 && !dayMap[date].g18) dayMap[date].g18 = g18[1];
+    if (g24 && !dayMap[date].g24) dayMap[date].g24 = g24[1];
+  }
+
+  if (dateOrder.length === 0) {
+    out += '<span class="val-missing">Не е намерен глюкозен профил</span>\n';
+  } else {
+    for (var d = 0; d < dateOrder.length; d++) {
+      var dt = dateOrder[d];
+      var vals = [];
+      if (dayMap[dt].g6)  vals.push("6ч: " + dayMap[dt].g6 + " mmol/L");
+      if (dayMap[dt].g12) vals.push("12ч: " + dayMap[dt].g12 + " mmol/L");
+      if (dayMap[dt].g18) vals.push("18ч: " + dayMap[dt].g18 + " mmol/L");
+      if (dayMap[dt].g24) vals.push("24ч: " + dayMap[dt].g24 + " mmol/L");
+      out += '<span class="val-found"><b>Дата ' + dt + ':</b> ' + vals.join('; ') + '</span>\n';
+    }
+  }
+  return out;
+}
+
+// ── Extract urine sediment grouped by date, with thresholds ──
+function arrangeUrineByDate(text) {
+  var out = '';
+  var blocks = text.split(/Лаб\.№\s*/);
+  var urineEntries = [];
+
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i];
+    var hasUrine = block.indexOf("Специфично тегло - урина") !== -1 || block.indexOf("Седимент урина") !== -1;
+    if (!hasUrine) continue;
+
+    var dateMatch = block.match(/Дата\s+(\d{2}\.\d{2}\.\d{4})/);
+    var date = dateMatch ? dateMatch[1] : "неизвестна дата";
+
+    var details = [];
+
+    // Белтък
+    var belMatch = block.match(/Белтък - урина - тест-лента - ([^\s;{]+)/);
+    if (belMatch && belMatch[1] !== "Neg") {
+      details.push("Белтък: " + belMatch[1]);
+    } else if (belMatch) {
+      details.push("Белтък: negative");
+    }
+
+    // Глюкоза - урина
+    var gluMatch = block.match(/Глюкоза - урина - тест-лента - ([^\s;{]+)/);
+    if (gluMatch) details.push("Глюкоза: " + gluMatch[1]);
+
+    // Кетотела — highlighted in red (important marker)
+    var ketMatch = block.match(/Кетотела - урина - тест-лента - ([^\s;{]+)/);
+    if (ketMatch) details.push('<span class="val-ketone">Кетотела: ' + ketMatch[1] + '</span>');
+
+    // Седимент ЛЕВКОЦИТИ > 50
+    var leuMatch = block.match(/Седимент урина - ЛЕВКОЦИТИ - ([\d.,]+)/);
+    if (leuMatch && parseFloat(leuMatch[1]) > 50) {
+      details.push("ЛЕВКОЦИТИ - " + leuMatch[1] + " cells/uL ⚠️");
+    }
+
+    // Седимент ЕРИТРОЦИТИ > 20
+    var eryMatch = block.match(/Седимент урина - ЕРИТРОЦИТИ - ([\d.,]+)/);
+    if (eryMatch && parseFloat(eryMatch[1]) > 20) {
+      details.push("ЕРИТРОЦИТИ - " + eryMatch[1] + "/uL ⚠️");
+    }
+
+    // бактерии > 2.0
+    var bacMatch = block.match(/Седимент урина - бактерии - ([\d.,]+)/);
+    if (bacMatch && parseFloat(bacMatch[1]) > 2.0) {
+      details.push("Бактерии - " + bacMatch[1] + "/uL ⚠️");
+    }
+
+    // Candida > 2.0
+    var candMatch = block.match(/Седимент урина - микроскопични гъбички \(Candida\) - ([\d.,]+)/);
+    if (candMatch && parseFloat(candMatch[1]) > 2.0) {
+      details.push("Candida - " + candMatch[1] + "/uL ⚠️");
+    }
+
+    if (details.length > 0) {
+      urineEntries.push({ date: date, details: details });
+    }
+  }
+
+  if (urineEntries.length === 0) {
+    out += '<span class="val-missing">Не е намерена урина</span>\n';
+  } else {
+    for (var u = 0; u < urineEntries.length; u++) {
+      out += '<span class="val-found"><b>Дата ' + urineEntries[u].date + ':</b> ' + urineEntries[u].details.join('; ') + '</span>\n';
+    }
+  }
+  return out;
+}
+
+// ══════════════════════════════════════
+//  ARRANGE: КП 79.1
+// ══════════════════════════════════════
+function arrangeKP79(text) {
+  var out = '';
+
+  out += '<span class="section-label">═══ КРЪВНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  out += arrangeBloodCount(text);
+
+  out += '<span class="section-label">═══ ТИРЕОИДНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  var thyroid = [
+    { label: "FT4", patterns: ["FT4"], unit: "pmol/L" },
+    { label: "fT3", patterns: ["fT3", "FT3"], unit: "pmol/L" },
+    { label: "TSH", patterns: ["TSH"], unit: "u[IU]/mL" },
+    { label: "Anti TG (TAT)", patterns: ["Anti TG(?:\\s*/?TAT/?)?"], unit: "[IU]/mL" },
+    { label: "Anti-TPO (MAT)", patterns: ["Anti-TPO(?:\\s*/?MAT/?)?"], unit: "U/mL" },
+    { label: "Тиреотропин рецепторни антитела", patterns: ["тиреотропин рецептор", "TRAB", "TRAb", "TSH рецептор"], unit: "" }
+  ];
+  thyroid.forEach(function(p) {
+    var val = extractParam(text, p.patterns, p.unit);
+    if (val || p.label === "FT4" || p.label === "TSH" || p.label === "Anti TG (TAT)" || p.label === "Anti-TPO (MAT)") {
+      out += formatLine(p.label, val);
+    }
+  });
+
+  // УЗД
+  out += arrangeUZD(text);
+
+  // ЕКГ
+  out += arrangeEKG(text);
+
+  return out;
+}
+
+// ══════════════════════════════════════
+//  ARRANGE: КП 80.1
+// ══════════════════════════════════════
+function arrangeKP80(text) {
+  var out = '';
+
+  out += '<span class="section-label">═══ КРЪВНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  out += arrangeBloodCount(text);
+
+  out += '<span class="section-label">═══ ХОРМОНАЛНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  var hormones = [
+    { label: "FT4", patterns: ["FT4"], unit: "pmol/L" },
+    { label: "TSH", patterns: ["TSH"], unit: "u[IU]/mL" },
+    { label: "Кортизол - серум", patterns: ["Кортизол(?:\\s*-\\s*свободен)?(?:\\s*,?\\s*серум)?"], unit: "nmol/L" },
+    { label: "LH", patterns: ["LH(?:\\s*\\(лутеинизиращ хормон\\))?"], unit: "m[IU]/mL" },
+    { label: "FSH", patterns: ["FSH(?:\\s*\\(фоликуло-стимулиращ хормон\\))?"], unit: "m[IU]/mL" },
+    { label: "Естрадиол", patterns: ["Естрадиол"], unit: "pmol/L" },
+    { label: "Тестостерон", patterns: ["Тестостерон", "Testosteron"], unit: "" },
+    { label: "GH / Растежен хормон", patterns: ["GH", "Растежен хормон"], unit: "" },
+    { label: "IGF1", patterns: ["IGF1", "IGF-1"], unit: "" },
+    { label: "АКТХ", patterns: ["АКТХ", "AKTH"], unit: "" },
+    { label: "Пролактин", patterns: ["Пролактин", "Prolactin"], unit: "" }
+  ];
+  hormones.forEach(function(p) {
+    var val = extractParam(text, p.patterns, p.unit);
+    if (val) { out += formatLine(p.label, val); }
+  });
+  // Show "not found" only if NONE found
+  var anyHormone = hormones.some(function(p) { return extractParam(text, p.patterns, "") !== null; });
+  if (!anyHormone) {
+    out += '<span class="val-missing">Няма намерени хормонални изследвания</span>\n';
+  }
+
+  // Кортизол урина 24ч
+  out += formatLine("Кортизол - урина 24ч", extractParam(text, ["Кортизол(?:\\s*-\\s*свободен)?(?:\\s*,?\\s*урина\\s*24)"], "ug/(24.h)"));
+
+  out += '<span class="section-label">═══ ОБРАЗНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+  // УЗД на шия
+  var uzdText = extractFreeText(text, ["ЕХОГРАФИЯ НА ШИЯ", "УЗД на шия", "Ехография на шия"]);
+  if (uzdText) out += '<span class="val-found">УЗД на шия: ' + uzdText + '</span>\n';
+
+  // ХИПОФИЗА МР
+  var mrText = extractFreeText(text, ["ХИПОФИЗА МР", "МР на хипофиза", "хипофиза мр"]);
+  if (mrText) out += '<span class="val-found">МР хипофиза: ' + mrText + '</span>\n';
+
+  // КТ
+  var ktText = extractFreeText(text, ["КТ ", "KT ", "Компютърна томография"]);
+  if (ktText) out += '<span class="val-found">КТ: ' + ktText + '</span>\n';
+
+  // Ехоскопия
+  var echoText = extractFreeText(text, ["Ехоскопия на коремни органи", "ехоскопия на коремни органи"]);
+  if (echoText) out += '<span class="val-found">Ехоскопия: ' + echoText + '</span>\n';
+
+  // Рентгенография
+  var xrayText = extractFreeText(text, ["РЕНТГЕНОГРАФИЯ", "Рентгенография"]);
+  if (xrayText) out += '<span class="val-found">Рентгенография: ' + xrayText + '</span>\n';
+
+  if (!uzdText && !mrText && !ktText && !echoText && !xrayText) {
+    out += '<span class="val-missing">Няма намерени образни изследвания</span>\n';
+  }
+
+  // ЕКГ
+  out += arrangeEKG(text);
+
+  return out;
+}
+
+// ══════════════════════════════════════
+//  ARRANGE: АП 13
+// ══════════════════════════════════════
+function arrangeAP13(text) {
+  var out = '';
+
+  // Blood count (if available)
+  var hasBlood = text.indexOf("Левкоцити") !== -1;
+  if (hasBlood) {
+    out += '<span class="section-label">═══ КРЪВНИ ИЗСЛЕДВАНИЯ ═══</span>\n';
+    out += arrangeBloodCount(text);
+
+    // Thyroid panel
+    var thyroid = [
+      { label: "FT4", patterns: ["FT4"], unit: "pmol/L" },
+      { label: "TSH", patterns: ["TSH"], unit: "u[IU]/mL" },
+      { label: "Anti TG (TAT)", patterns: ["Anti TG(?:\\s*/?TAT/?)?"], unit: "[IU]/mL" },
+      { label: "Anti-TPO (MAT)", patterns: ["Anti-TPO(?:\\s*/?MAT/?)?"], unit: "U/mL" }
+    ];
+    thyroid.forEach(function(p) { out += formatLine(p.label, extractParam(text, p.patterns, p.unit)); });
+  }
+
+  // УЗД на шия
+  out += arrangeUZD(text);
+
+  // Цитологично изследване
+  out += '<span class="section-label">═══ ЦИТОЛОГИЯ ═══</span>\n';
+  var cytoText = extractFreeText(text, ["Цитологично изследване", "цитологично изследване", "тънкоиглена аспирационна биопсия", "ТАБ"]);
+  if (cytoText) {
+    out += '<span class="val-found">' + cytoText + '</span>\n';
+  } else {
+    out += '<span class="val-missing">Не е намерено цитологично изследване</span>\n';
+  }
+
+  return out;
+}
+
+function arrangeResults(pathway, text, age, sex) {
+  switch (pathway) {
+    case "КП 78.1": return arrangeKP78(text, age, sex);
+    case "КП 79.1": return arrangeKP79(text);
+    case "КП 80.1": return arrangeKP80(text);
+    case "КП 81.1": return arrangeKP81(text);
+    case "АП 13":   return arrangeAP13(text);
+    default: return null;
+  }
+}
+
+
+// ═══════════════════════════════════════════════
+//  UI LOGIC
+// ═══════════════════════════════════════════════
+var CONFIGURED = ["АП 13", "КП 78.1", "КП 79.1", "КП 80.1", "КП 81.1"];
+var ARRANGE_CONFIGURED = ["АП 13", "КП 78.1", "КП 79.1", "КП 80.1", "КП 81.1"];
+
+var pathwayEl = document.getElementById("pathway");
+var inputEl   = document.getElementById("inputText");
+var checkBtn  = document.getElementById("checkBtn");
+var arrangeBtn = document.getElementById("arrangeBtn");
+var resetBtn  = document.getElementById("resetBtn");
+var resultsEl = document.getElementById("results");
+var arrangedEl = document.getElementById("arranged");
+var reminderPanel = document.getElementById("reminderPanel");
+var reminderText  = document.getElementById("reminderText");
+
+function updateBtns() {
+  var hasInput = pathwayEl.value && inputEl.value.trim();
+  checkBtn.disabled = !hasInput;
+  arrangeBtn.disabled = !hasInput || !ARRANGE_CONFIGURED.includes(pathwayEl.value);
+}
+
+function showReminder() {
+  var pw = pathwayEl.value;
+  if (REMINDERS[pw]) {
+    reminderText.textContent = REMINDERS[pw];
+    reminderPanel.classList.add("visible");
+  } else {
+    reminderPanel.classList.remove("visible");
+  }
+}
+
+pathwayEl.addEventListener("change", function() {
+  updateBtns(); resultsEl.innerHTML = ""; arrangedEl.innerHTML = ""; showReminder();
+});
+inputEl.addEventListener("input", function() {
+  updateBtns(); resultsEl.innerHTML = ""; arrangedEl.innerHTML = "";
+});
+resetBtn.addEventListener("click", function() {
+  pathwayEl.selectedIndex = 0;
+  inputEl.value = ""; inputEl.textContent = "";
+  resultsEl.innerHTML = ""; arrangedEl.innerHTML = "";
+  checkBtn.disabled = true; arrangeBtn.disabled = true;
+  reminderPanel.classList.remove("visible");
+  inputEl.focus();
+});
+
+// ── Check button ──
+checkBtn.addEventListener("click", function() {
+  arrangedEl.innerHTML = "";
+  var pathway = pathwayEl.value;
+  var text = normalizeText(inputEl.value);
+  if (!CONFIGURED.includes(pathway)) {
+    resultsEl.innerHTML = '<div class="warning-box">⚠️ Тази клинична пътека все още не е конфигурирана.</div>';
+    return;
+  }
+  var result = checkPathway(pathway, text);
+  if (!result) return;
+  var items = result.items;
+  var warnings = result.warnings;
+  var checkable = items.filter(function(i) { return i.type === "required" || i.type === "oneOf"; });
+  var foundCount = checkable.filter(function(i) { return i.found; }).length;
+  var totalCount = checkable.length;
+  var missingItems = checkable.filter(function(i) { return !i.found; });
+  var pct = Math.round((foundCount / totalCount) * 100);
+  var barClass = pct === 100 ? "green" : pct > 60 ? "yellow" : "red";
+
+  var html = '<div class="progress-header"><span>Намерени: ' + foundCount + ' / ' + totalCount + '</span><span>' + pct + '%</span></div>' +
+    '<div class="progress-bar"><div class="progress-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
+  if (missingItems.length === 0) {
+    html += '<div class="banner banner-success"><div class="banner-icon">✅</div><h2>Mission complete!</h2>' +
+      '<p class="sub">Всички ' + totalCount + ' задължителни изследвания са налични.</p></div>';
+  } else {
+    var missingText = missingItems.length === 1
+      ? '„' + missingItems[0].label + '" липсва!'
+      : missingItems.length + ' изследвания липсват!';
+    var tags = missingItems.map(function(m) {
+      var cls = m.type === "oneOf" ? "tag tag-group" : "tag";
+      return '<span class="' + cls + '">❌ ' + m.label + '</span>';
+    }).join("");
+    html += '<div class="banner banner-fail"><div class="banner-icon">⚡</div><h2>Stop!</h2>' +
+      '<p class="sub">' + missingText + '</p><div class="missing-tags">' + tags + '</div></div>';
+  }
+  warnings.forEach(function(w) {
+    html += '<div class="warning-banner"><div class="warning-banner-text">💊 ' + w + '</div></div>';
+  });
+  var detailItems = items.map(function(r) {
+    if (r.type === "conditional-info") {
+      return '<div class="detail-item group-header">' + r.label + '</div>';
+    }
+    if (r.type === "oneOf") {
+      var mainCls = r.found ? "found" : "missing";
+      var mainIcon = r.found ? "✅" : "❌";
+      var sub = '';
+      if (r.subItems) {
+        sub = r.subItems.map(function(s) {
+          var sCls = s.found ? "group-ok" : "group-fail";
+          var sIcon = s.found ? "✅" : "⬜";
+          return '<div class="detail-item ' + sCls + '" style="padding-left:28px;font-size:12px;"><span class="detail-icon">' + sIcon + '</span><span>' + s.label + '</span></div>';
+        }).join("");
+      }
+      return '<div class="detail-item ' + mainCls + '" style="grid-column:1/-1;font-weight:700;"><span class="detail-icon">' + mainIcon + '</span><span>' + r.label + '</span></div>' + sub;
+    }
+    var cls = r.found ? "found" : "missing";
+    var icon = r.found ? "✅" : "❌";
+    return '<div class="detail-item ' + cls + '"><span class="detail-icon">' + icon + '</span><span>' + r.label + '</span></div>';
+  }).join("");
+  var showGrid = missingItems.length > 0 ? "grid" : "none";
+  html += '<button class="details-toggle" onclick="toggleDetails()"><span id="detailArrow">' + (missingItems.length > 0 ? '▼' : '▶') + '</span> Детайлен преглед</button>' +
+    '<div class="details-grid" id="detailsGrid" style="display:' + showGrid + '">' + detailItems + '</div>';
+  resultsEl.innerHTML = html;
+});
+
+// ── Arrange button ──
+var NEEDS_EGFR = ["КП 78.1"];
+
+arrangeBtn.addEventListener("click", function() {
+  resultsEl.innerHTML = "";
+  var pathway = pathwayEl.value;
+  var text = normalizeText(inputEl.value);
+
+  if (NEEDS_EGFR.includes(pathway)) {
+    // Show patient input panel first
+    arrangedEl.innerHTML = '<div class="patient-input-panel">' +
+      '<h3>🧮 Въведете данни за eGFR (CKD-EPI 2021):</h3>' +
+      '<div class="patient-fields">' +
+        '<div class="patient-field"><label>Възраст (години)</label><br>' +
+          '<input type="number" id="patientAge" min="18" max="120" placeholder="напр. 65"></div>' +
+        '<div class="patient-field"><label>Пол</label><br>' +
+          '<select id="patientSex"><option value="">— избери —</option><option value="male">Мъж</option><option value="female">Жена</option></select></div>' +
+        '<div class="patient-field"><button class="btn-compute" id="computeBtn">📋 Покажи резултати</button></div>' +
+      '</div></div>';
+
+    document.getElementById("computeBtn").addEventListener("click", function() {
+      var age = parseInt(document.getElementById("patientAge").value) || 0;
+      var sex = document.getElementById("patientSex").value;
+      if (!age || !sex) {
+        alert("Моля, въведете възраст и пол.");
+        return;
+      }
+      var arranged = arrangeResults(pathway, text, age, sex);
+      if (!arranged) return;
+      arrangedEl.innerHTML = '<div class="arranged-output">' +
+        '<div class="arranged-header"><span>📋 Подредени резултати — ' + pathway + '</span>' +
+        '<button class="btn-copy" onclick="copyArranged()">📄 Копирай</button></div>' +
+        '<div class="arranged-body" id="arrangedBody">' + arranged + '</div></div>';
+    });
+    return;
+  }
+
+  // No eGFR needed — show directly
+  var arranged = arrangeResults(pathway, text, null, null);
+  if (!arranged) {
+    arrangedEl.innerHTML = '<div class="warning-box">⚠️ Подреждане за тази пътека не е налично все още.</div>';
+    return;
+  }
+  arrangedEl.innerHTML = '<div class="arranged-output">' +
+    '<div class="arranged-header"><span>📋 Подредени резултати — ' + pathway + '</span>' +
+    '<button class="btn-copy" onclick="copyArranged()">📄 Копирай</button></div>' +
+    '<div class="arranged-body" id="arrangedBody">' + arranged + '</div></div>';
+});
+
+function copyArranged() {
+  var body = document.getElementById("arrangedBody");
+  if (!body) return;
+  var text = body.innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.querySelector(".btn-copy");
+    if (btn) { btn.textContent = "✅ Копирано!"; setTimeout(function() { btn.textContent = "📄 Копирай"; }, 2000); }
+  });
+}
+
+function toggleDetails() {
+  var grid = document.getElementById("detailsGrid");
+  var arrow = document.getElementById("detailArrow");
+  if (grid.style.display === "none") { grid.style.display = "grid"; arrow.textContent = "▼"; }
+  else { grid.style.display = "none"; arrow.textContent = "▶"; }
+}
+</script>
+</body>
+</html>
