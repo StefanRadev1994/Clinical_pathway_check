@@ -323,7 +323,7 @@
       <div id="results" class="results"></div>
       <div id="arranged" class="results"></div>
     </div>
-    <p class="footer">Клинична Пътека Валидатор v2.0</p>
+    <p class="footer">Клинична Пътека Валидатор 2026 made by Stefan Radev</p>
   </div>
 
   <!-- Floating reminder panel -->
@@ -804,12 +804,12 @@ function ckdEpi2021(scrUmol, age, sex) {
 }
 
 function getCKDStage(egfr) {
-  if (egfr >= 90)  return { stage: "G1", label: "Нормална или висока", cls: "g1" };
-  if (egfr >= 60)  return { stage: "G2", label: "Леко намалена", cls: "g2" };
-  if (egfr >= 45)  return { stage: "G3a", label: "Леко до умерено намалена", cls: "g3a" };
-  if (egfr >= 30)  return { stage: "G3b", label: "Умерено до тежко намалена", cls: "g3b" };
-  if (egfr >= 15)  return { stage: "G4", label: "Тежко намалена", cls: "g4" };
-  return { stage: "G5", label: "Бъбречна недостатъчност", cls: "g5" };
+  if (egfr >= 90)  return { stage: "G1", label: "G1-ст.:Нормална или хиперфилстрация", cls: "g1" };
+  if (egfr >= 60)  return { stage: "G2", label: " G2-ст:Леко намалена", cls: "g2" };
+  if (egfr >= 45)  return { stage: "G3a", label: "G3a-ст:Леко до умерено намалена", cls: "g3a" };
+  if (egfr >= 30)  return { stage: "G3b", label: "G3b-ст:Умерено до тежко намалена", cls: "g3b" };
+  if (egfr >= 15)  return { stage: "G4", label: "G4-ст:Тежко намалена", cls: "g4" };
+  return { stage: "G5", label: "G5-ст.:Бъбречна недостатъчност", cls: "g5" };
 }
 
 function getCreatinineForEGFR(text) {
