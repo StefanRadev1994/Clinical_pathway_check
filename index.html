@@ -965,6 +965,9 @@ function arrangeUrineByDate(text) {
     var date = dateMatch ? dateMatch[1] : "неизвестна дата";
 
     var details = [];
+    // Специфично тегло
+    var spTegloMatch = block.match(/Специфично тегло - урина - тест-лента - ([\d.,]+)/);
+    if (spTegloMatch) details.push("Специфично тегло: " + spTegloMatch[1]);
 
     // Белтък
     var belMatch = block.match(/Белтък - урина - тест-лента - ([^\s;{]+)/);
@@ -976,11 +979,19 @@ function arrangeUrineByDate(text) {
 
     // Глюкоза - урина
     var gluMatch = block.match(/Глюкоза - урина - тест-лента - ([^\s;{]+)/);
-    if (gluMatch) details.push("Глюкоза: " + gluMatch[1]);
+    if (gluMatch) {
+      details.push("Глюкоза: " + (gluMatch[1] === "Neg" ? "negative" : gluMatch[1]));
+    }
 
     // Кетотела — highlighted in red (important marker)
     var ketMatch = block.match(/Кетотела - урина - тест-лента - ([^\s;{]+)/);
-    if (ketMatch) details.push('<span class="val-ketone">Кетотела: ' + ketMatch[1] + '</span>');
+    if (ketMatch) {
+      if (ketMatch[1] === "Neg") {
+        details.push("Кетотела: negative");
+      } else {
+        details.push('<span class="val-ketone">Кетотела: ' + ketMatch[1] + '</span>');
+      }
+    }
 
     // Седимент ЛЕВКОЦИТИ > 50
     var leuMatch = block.match(/Седимент урина - ЛЕВКОЦИТИ - ([\d.,]+)/);
