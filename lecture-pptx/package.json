@@ -1,0 +1,13 @@
+{
+  "name": "clinical-pathway-lecture-pptx",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "example": "node examples/run-sample.js",
+    "build:pptx": "node src/cli.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^3.12.0",
+    "pdfjs-dist": "^4.10.38"
+  }
+}
